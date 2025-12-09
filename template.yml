@@ -1,0 +1,13 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: blum-theshire-events
+Transform:
+  - AWS::Serverless-2016-10-31
+Resources:
+  EventsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: dist/handlers/events.eventsHandler
+      Runtime: nodejs20.x
+      MemorySize: 128
+      Timeout: 100
+Outputs: ~

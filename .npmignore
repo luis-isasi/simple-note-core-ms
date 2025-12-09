@@ -1,0 +1,14 @@
+__tests__
+test/*
+*.spec.*
+*.ts
+tsconfig.json
+tslint.json
+.mocharc.json
+.idea
+events
+buildspec.yml
+env.json
+README.md
+template.yml
+jest.config.js

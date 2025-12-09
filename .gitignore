@@ -1,0 +1,6 @@
+.aws-sam
+node_modules
+coverage
+.idea
+dist
+junit.xml
