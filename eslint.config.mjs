@@ -15,7 +15,7 @@ export default [
   {
     files: ['**/*.ts'],
     rules: {
-      'no-console': 'warn',
+      'no-console': 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
       'linebreak-style': ['error', 'unix'],
       'no-new': 'off',

@@ -1,13 +1,13 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: blum-theshire-events
+Description: simple-note-core-ms
 Transform:
   - AWS::Serverless-2016-10-31
 Resources:
   EventsLambda:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: dist/handlers/events.eventsHandler
+      Handler: dist/handlers/simpleNote.simpleNoteHandler
       Runtime: nodejs20.x
       MemorySize: 128
-      Timeout: 100
-Outputs: ~
+      Timeout: 30
+Outputs:
