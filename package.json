@@ -10,7 +10,7 @@
     "test": "jest --runInBand --coverage",
     "test:watch": "jest --runInBand --watchAll",
     "test:ci": "jest --runInBand --coverage --silent",
-    "log": "aws logs tail /aws/lambda/SimpleNote --follow"
+    "log": "aws logs tail /aws/lambda/SimpleNoteDev --follow"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "3.774.0",
