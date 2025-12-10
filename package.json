@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "prebuild": "npx eslint . --fix --ext .ts",
-    "build": "esbuild src/handlers/simpleNote.ts --bundle --platform=node --target=node22 --outfile=dist/handlers/simpleNote.js --external:aws-sdk",
+    "build": "esbuild src/handlers/index.ts --bundle --platform=node --target=node22 --outfile=dist/handlers/simpleNote.js --external:aws-sdk",
     "build:watch": "nodemon --watch src --ext ts --exec npm run build",
     "test": "jest --runInBand --coverage",
     "test:watch": "jest --runInBand --watchAll",
