@@ -6,8 +6,8 @@ Resources:
   EventsLambda:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: handlers/simpleNote.simpleNoteHandler
-      Runtime: nodejs20.x
+      Handler: handlers/index.handler
+      Runtime: nodejs22.x
       MemorySize: 128
       Timeout: 30
 Outputs:
