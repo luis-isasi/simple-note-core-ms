@@ -12,7 +12,7 @@ describe('Controller', () => {
     } as APIGatewayProxyEvent);
 
     // Validate
-    expect(result.statusCode).toEqual(300);
+    expect(result.statusCode).toEqual(200);
     expect(result.body).toBeDefined();
   });
 });
