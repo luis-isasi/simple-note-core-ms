@@ -6,7 +6,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
 
   if ('httpMethod' in event) {
     if (event.httpMethod === 'GET') {
-      return simpleNoteController.testMethod(event);
+      return simpleNoteController.getNotes(event);
     }
   }
 
