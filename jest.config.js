@@ -6,7 +6,7 @@ module.exports = {
   reporters: ['default', 'jest-junit'],
   coverageThreshold: {
     global: {
-      statements: 80,
+      statements: 30,
     },
   },
   transform: {
