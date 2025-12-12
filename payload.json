@@ -1,0 +1,9 @@
+{
+  "tableName": "SimpleNoteDev",
+  "payload": {
+    "userId": "123",
+    "noteId": "123",
+    "title": "Test Note",
+    "content": "This is a test note"
+  }
+}
