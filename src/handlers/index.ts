@@ -5,7 +5,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   console.log('event', JSON.stringify(event, null, 2));
 
   if ('httpMethod' in event) {
-    if (event.httpMethod === 'POST') {
+    if (event.httpMethod === 'GET') {
       return simpleNoteController.testMethod(event);
     }
   }
