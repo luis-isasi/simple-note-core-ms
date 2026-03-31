@@ -1,17 +1,108 @@
-import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { BaseController } from './BaseController';
+import { NoteService } from '../service/NoteService';
+import { BadRequestError } from '../exceptions/BadRequestError';
+
+const createNoteSchema = z.object({
+  text: z.string().min(1, 'text cannot be empty'),
+});
+
+const updateNoteSchema = z.object({
+  text: z.string().min(1, 'text cannot be empty'),
+});
 
 export class SimpleNoteController extends BaseController {
-  constructor() {
+  constructor(private service: NoteService) {
     super();
   }
 
-  async getNotes(event: APIGatewayProxyEvent) {
+  async getNotes(_event: APIGatewayProxyEvent) {
     try {
-      return this.apiResponseOk({ message: 'Hello, world!', uuid: uuidv4() });
+      const notes = await this.service.getNotes();
+      return this.apiResponseOk({ notes });
     } catch (error: any) {
       return this.apiResponseError(error);
+    }
+  }
+
+  async createNote(event: APIGatewayProxyEvent) {
+    try {
+      const body = this.parseBody(event.body);
+      const parsed = createNoteSchema.safeParse(body);
+
+      if (!parsed.success) {
+        throw new BadRequestError({
+          code: 'bad_request',
+          message: 'Validation failed',
+          detail: parsed.error.issues.map((i) => i.message).join(', '),
+        });
+      }
+
+      const note = await this.service.createNote(parsed.data.text);
+      return this.apiResponseCreated(note);
+    } catch (error: any) {
+      return this.apiResponseError(error);
+    }
+  }
+
+  async updateNote(event: APIGatewayProxyEvent) {
+    try {
+      const noteId = event.pathParameters?.noteId;
+      if (!noteId) {
+        throw new BadRequestError({
+          code: 'bad_request',
+          message: 'Validation failed',
+          detail: 'noteId path parameter is required',
+        });
+      }
+
+      const body = this.parseBody(event.body);
+      const parsed = updateNoteSchema.safeParse(body);
+
+      if (!parsed.success) {
+        throw new BadRequestError({
+          code: 'bad_request',
+          message: 'Validation failed',
+          detail: parsed.error.issues.map((i) => i.message).join(', '),
+        });
+      }
+
+      await this.service.updateNote(noteId, parsed.data.text);
+      return this.apiResponseOk();
+    } catch (error: any) {
+      return this.apiResponseError(error);
+    }
+  }
+
+  async deleteNote(event: APIGatewayProxyEvent) {
+    try {
+      const noteId = event.pathParameters?.noteId;
+      if (!noteId) {
+        throw new BadRequestError({
+          code: 'bad_request',
+          message: 'Validation failed',
+          detail: 'noteId path parameter is required',
+        });
+      }
+
+      await this.service.deleteNote(noteId);
+      return this.apiResponseOk();
+    } catch (error: any) {
+      return this.apiResponseError(error);
+    }
+  }
+
+  private parseBody(raw: string | null): unknown {
+    if (!raw) return {};
+    try {
+      return JSON.parse(raw);
+    } catch {
+      throw new BadRequestError({
+        code: 'bad_request',
+        message: 'Invalid JSON body',
+        detail: 'Request body must be valid JSON',
+      });
     }
   }
 }

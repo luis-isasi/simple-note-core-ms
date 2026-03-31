@@ -27,6 +27,7 @@ export class AbstractError extends Error {
     return {
       code: this.props.code || 'unknown',
       message: this.message,
+      detail: this.props.detail,
     };
   }
 }

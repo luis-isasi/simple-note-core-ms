@@ -39,6 +39,15 @@ export class BaseController {
     };
   }
 
+  public apiResponseCreated(body?: any): APIGatewayProxyResult {
+    return {
+      statusCode: HttpStatusCode.CREATED,
+      // headers: CORS_HEADERS,
+      isBase64Encoded: false,
+      ...(body && { body: JSON.stringify(body) }),
+    };
+  }
+
   public apiResponseAccepted(body?: any): APIGatewayProxyResult {
     return {
       statusCode: HttpStatusCode.ACCEPTED,
