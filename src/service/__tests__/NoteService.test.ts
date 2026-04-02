@@ -1,6 +1,7 @@
 import { NoteService } from '../NoteService';
 import { NoteRepository } from '../../repository/NoteRepository';
 import { Note } from '../../domain/Note';
+import { NotFoundError } from '../../exceptions/NotFoundError';
 
 jest.mock('uuid', () => ({ v4: () => 'mocked-uuid' }));
 
@@ -19,6 +20,7 @@ describe('NoteService', () => {
   beforeEach(() => {
     repository = {
       getNotes: jest.fn(),
+      getNoteById: jest.fn(),
       createNote: jest.fn(),
       updateNote: jest.fn(),
       deleteNote: jest.fn(),
@@ -112,18 +114,46 @@ describe('NoteService', () => {
       jest.restoreAllMocks();
     });
 
-    it('calls repository.updateNote with the correct arguments', async () => {
+    it('gets the note first and calls repository.updateNote with creationDate', async () => {
+      repository.getNoteById.mockResolvedValue(mockNote);
       repository.updateNote.mockResolvedValue();
 
-      await service.updateNote('abc-123', 'Updated text');
+      await service.updateNote('mocked-uuid', 'Updated text');
 
-      expect(repository.updateNote).toHaveBeenCalledWith('abc-123', 'Updated text', 2000);
+      expect(repository.getNoteById).toHaveBeenCalledWith('mocked-uuid');
+      expect(repository.updateNote).toHaveBeenCalledWith('mocked-uuid', 1000, 'Updated text', 2000);
     });
 
-    it('propagates errors thrown by the repository', async () => {
+    it('throws NotFoundError with code 1.4.1 when note does not exist', async () => {
+      repository.getNoteById.mockResolvedValue(null);
+
+      await expect(service.updateNote('missing-id', 'Updated text')).rejects.toThrow(NotFoundError);
+
+      const error = await service
+        .updateNote('missing-id', 'Updated text')
+        .catch((e) => e as NotFoundError);
+      expect(error.props.code).toEqual('1.4.1');
+    });
+
+    it('does not call repository.updateNote when note is not found', async () => {
+      repository.getNoteById.mockResolvedValue(null);
+
+      await service.updateNote('missing-id', 'Updated text').catch(() => {});
+
+      expect(repository.updateNote).not.toHaveBeenCalled();
+    });
+
+    it('propagates errors thrown by repository.getNoteById', async () => {
+      repository.getNoteById.mockRejectedValue(new Error('DB error'));
+
+      await expect(service.updateNote('mocked-uuid', 'Updated text')).rejects.toThrow('DB error');
+    });
+
+    it('propagates errors thrown by repository.updateNote', async () => {
+      repository.getNoteById.mockResolvedValue(mockNote);
       repository.updateNote.mockRejectedValue(new Error('DB error'));
 
-      await expect(service.updateNote('abc-123', 'Updated text')).rejects.toThrow('DB error');
+      await expect(service.updateNote('mocked-uuid', 'Updated text')).rejects.toThrow('DB error');
     });
   });
 
@@ -138,18 +168,44 @@ describe('NoteService', () => {
       jest.restoreAllMocks();
     });
 
-    it('calls repository.deleteNote with the correct arguments', async () => {
+    it('gets the note first and calls repository.deleteNote with creationDate', async () => {
+      repository.getNoteById.mockResolvedValue(mockNote);
       repository.deleteNote.mockResolvedValue();
 
-      await service.deleteNote('abc-123');
+      await service.deleteNote('mocked-uuid');
 
-      expect(repository.deleteNote).toHaveBeenCalledWith('abc-123', 3000);
+      expect(repository.getNoteById).toHaveBeenCalledWith('mocked-uuid');
+      expect(repository.deleteNote).toHaveBeenCalledWith('mocked-uuid', 1000, 3000);
     });
 
-    it('propagates errors thrown by the repository', async () => {
+    it('throws NotFoundError with code 1.4.2 when note does not exist', async () => {
+      repository.getNoteById.mockResolvedValue(null);
+
+      await expect(service.deleteNote('missing-id')).rejects.toThrow(NotFoundError);
+
+      const error = await service.deleteNote('missing-id').catch((e) => e as NotFoundError);
+      expect(error.props.code).toEqual('1.4.2');
+    });
+
+    it('does not call repository.deleteNote when note is not found', async () => {
+      repository.getNoteById.mockResolvedValue(null);
+
+      await service.deleteNote('missing-id').catch(() => {});
+
+      expect(repository.deleteNote).not.toHaveBeenCalled();
+    });
+
+    it('propagates errors thrown by repository.getNoteById', async () => {
+      repository.getNoteById.mockRejectedValue(new Error('DB error'));
+
+      await expect(service.deleteNote('mocked-uuid')).rejects.toThrow('DB error');
+    });
+
+    it('propagates errors thrown by repository.deleteNote', async () => {
+      repository.getNoteById.mockResolvedValue(mockNote);
       repository.deleteNote.mockRejectedValue(new Error('DB error'));
 
-      await expect(service.deleteNote('abc-123')).rejects.toThrow('DB error');
+      await expect(service.deleteNote('mocked-uuid')).rejects.toThrow('DB error');
     });
   });
 });

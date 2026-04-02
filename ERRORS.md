@@ -29,3 +29,5 @@ Error codes follow the format `major.minor.patch`:
 | 1.2.3 | 400  | BadRequestError         | noteId path parameter is required         | SimpleNoteController.updateNote |
 | 1.2.4 | 400  | BadRequestError         | Zod validation message (updateNote)       | SimpleNoteController.updateNote |
 | 1.2.5 | 400  | BadRequestError         | noteId path parameter is required         | SimpleNoteController.deleteNote |
+| 1.4.1 | 404  | NotFoundError           | Note not found                            | NoteService.updateNote          |
+| 1.4.2 | 404  | NotFoundError           | Note not found                            | NoteService.deleteNote          |

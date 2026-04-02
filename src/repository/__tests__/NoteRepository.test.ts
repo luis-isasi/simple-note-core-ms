@@ -1,4 +1,10 @@
-import { DynamoDBDocumentClient, ScanCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  DynamoDBDocumentClient,
+  ScanCommand,
+  PutCommand,
+  UpdateCommand,
+  QueryCommand,
+} from '@aws-sdk/lib-dynamodb';
 import { NoteRepository } from '../NoteRepository';
 import { Note } from '../../domain/Note';
 
@@ -15,6 +21,7 @@ jest.mock('@aws-sdk/lib-dynamodb', () => {
       from: jest.fn().mockReturnValue({ send: mockSend }),
     },
     ScanCommand: jest.fn().mockImplementation((input) => ({ input })),
+    QueryCommand: jest.fn().mockImplementation((input) => ({ input })),
     PutCommand: jest.fn().mockImplementation((input) => ({ input })),
     UpdateCommand: jest.fn().mockImplementation((input) => ({ input })),
   };
@@ -41,6 +48,7 @@ describe('NoteRepository', () => {
     process.env.NOTES_TABLE_NAME = TABLE_NAME;
     mockSend.mockReset();
     jest.mocked(ScanCommand).mockClear();
+    jest.mocked(QueryCommand).mockClear();
     jest.mocked(PutCommand).mockClear();
     jest.mocked(UpdateCommand).mockClear();
     repository = new NoteRepository();
@@ -81,6 +89,53 @@ describe('NoteRepository', () => {
     });
   });
 
+  // ─── getNoteById ─────────────────────────────────────────────────────────────
+
+  describe('getNoteById', () => {
+    it('sends a QueryCommand with the correct key condition', async () => {
+      mockSend.mockResolvedValue({ Items: [mockNote] });
+
+      await repository.getNoteById('abc-123');
+
+      expect(QueryCommand).toHaveBeenCalledWith({
+        TableName: TABLE_NAME,
+        KeyConditionExpression: 'id = :id',
+        ExpressionAttributeValues: { ':id': 'abc-123' },
+      });
+      expect(mockSend).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns the note when found', async () => {
+      mockSend.mockResolvedValue({ Items: [mockNote] });
+
+      const result = await repository.getNoteById('abc-123');
+
+      expect(result).toEqual(mockNote);
+    });
+
+    it('returns null when no items are found', async () => {
+      mockSend.mockResolvedValue({ Items: [] });
+
+      const result = await repository.getNoteById('abc-123');
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null when Items is undefined', async () => {
+      mockSend.mockResolvedValue({});
+
+      const result = await repository.getNoteById('abc-123');
+
+      expect(result).toBeNull();
+    });
+
+    it('propagates errors thrown by the client', async () => {
+      mockSend.mockRejectedValue(new Error('DynamoDB error'));
+
+      await expect(repository.getNoteById('abc-123')).rejects.toThrow('DynamoDB error');
+    });
+  });
+
   // ─── createNote ──────────────────────────────────────────────────────────────
 
   describe('createNote', () => {
@@ -103,14 +158,14 @@ describe('NoteRepository', () => {
   // ─── updateNote ──────────────────────────────────────────────────────────────
 
   describe('updateNote', () => {
-    it('sends an UpdateCommand with the correct parameters', async () => {
+    it('sends an UpdateCommand with both partition key and sort key', async () => {
       mockSend.mockResolvedValue({});
 
-      await repository.updateNote('abc-123', 'New text', 2000);
+      await repository.updateNote('abc-123', 1000, 'New text', 2000);
 
       expect(UpdateCommand).toHaveBeenCalledWith({
         TableName: TABLE_NAME,
-        Key: { id: 'abc-123' },
+        Key: { id: 'abc-123', creationDate: 1000 },
         UpdateExpression: 'SET #text = :text, lastUpdate = :lastUpdate',
         ExpressionAttributeNames: { '#text': 'text' },
         ExpressionAttributeValues: { ':text': 'New text', ':lastUpdate': 2000 },
@@ -121,7 +176,7 @@ describe('NoteRepository', () => {
     it('propagates errors thrown by the client', async () => {
       mockSend.mockRejectedValue(new Error('DynamoDB error'));
 
-      await expect(repository.updateNote('abc-123', 'New text', 2000)).rejects.toThrow(
+      await expect(repository.updateNote('abc-123', 1000, 'New text', 2000)).rejects.toThrow(
         'DynamoDB error',
       );
     });
@@ -130,14 +185,14 @@ describe('NoteRepository', () => {
   // ─── deleteNote ──────────────────────────────────────────────────────────────
 
   describe('deleteNote', () => {
-    it('sends an UpdateCommand that sets status to DELETED', async () => {
+    it('sends an UpdateCommand that sets status to DELETED with both keys', async () => {
       mockSend.mockResolvedValue({});
 
-      await repository.deleteNote('abc-123', 3000);
+      await repository.deleteNote('abc-123', 1000, 3000);
 
       expect(UpdateCommand).toHaveBeenCalledWith({
         TableName: TABLE_NAME,
-        Key: { id: 'abc-123' },
+        Key: { id: 'abc-123', creationDate: 1000 },
         UpdateExpression: 'SET #status = :status, lastUpdate = :lastUpdate',
         ExpressionAttributeNames: { '#status': 'status' },
         ExpressionAttributeValues: { ':status': 'DELETED', ':lastUpdate': 3000 },
@@ -148,7 +203,7 @@ describe('NoteRepository', () => {
     it('propagates errors thrown by the client', async () => {
       mockSend.mockRejectedValue(new Error('DynamoDB error'));
 
-      await expect(repository.deleteNote('abc-123', 3000)).rejects.toThrow('DynamoDB error');
+      await expect(repository.deleteNote('abc-123', 1000, 3000)).rejects.toThrow('DynamoDB error');
     });
   });
 });

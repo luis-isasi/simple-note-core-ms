@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Note } from '../domain/Note';
 import { NoteRepository } from '../repository/NoteRepository';
+import { NotFoundError } from '../exceptions/NotFoundError';
 
 export class NoteService {
   constructor(private repository: NoteRepository) {}
@@ -23,10 +24,18 @@ export class NoteService {
   }
 
   async updateNote(noteId: string, text: string): Promise<void> {
-    await this.repository.updateNote(noteId, text, Date.now());
+    const note = await this.repository.getNoteById(noteId);
+    if (!note) {
+      throw new NotFoundError({ code: '1.4.1', message: 'Note not found' });
+    }
+    await this.repository.updateNote(noteId, note.creationDate, text, Date.now());
   }
 
   async deleteNote(noteId: string): Promise<void> {
-    await this.repository.deleteNote(noteId, Date.now());
+    const note = await this.repository.getNoteById(noteId);
+    if (!note) {
+      throw new NotFoundError({ code: '1.4.2', message: 'Note not found' });
+    }
+    await this.repository.deleteNote(noteId, note.creationDate, Date.now());
   }
 }
