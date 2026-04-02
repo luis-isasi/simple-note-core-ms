@@ -4,7 +4,9 @@ import { NoteService } from '../../service/NoteService';
 import { Note } from '../../domain/Note';
 import { ServiceUnavailableError } from '../../exceptions/ServiceUnavailableError';
 
-const makeEvent = (overrides: Partial<APIGatewayProxyEvent> = {}): APIGatewayProxyEvent =>
+const makeEvent = (
+  overrides: Partial<APIGatewayProxyEvent> = {},
+): APIGatewayProxyEvent =>
   ({
     httpMethod: 'GET',
     resource: '/notes',
@@ -48,24 +50,29 @@ describe('SimpleNoteController', () => {
       expect(JSON.parse(result.body!)).toEqual({ notes: [mockNote] });
     });
 
-    it('returns 500 when service throws an unknown error', async () => {
+    it('returns 500 with code 1.1.1 when service throws an unknown error', async () => {
       service.getNotes.mockRejectedValue(new Error('DB error'));
 
       const result = await controller.getNotes(makeEvent());
 
       expect(result.statusCode).toEqual(500);
-      expect(JSON.parse(result.body!)).toMatchObject({ code: 'unknown' });
+      expect(JSON.parse(result.body!)).toMatchObject({ code: '1.1.1' });
     });
 
     it('returns the service error code when service throws a known error', async () => {
       service.getNotes.mockRejectedValue(
-        new ServiceUnavailableError({ code: 'service_unavailable', message: 'down' }),
+        new ServiceUnavailableError({
+          code: 'service_unavailable',
+          message: 'down',
+        }),
       );
 
       const result = await controller.getNotes(makeEvent());
 
       expect(result.statusCode).toEqual(503);
-      expect(JSON.parse(result.body!)).toMatchObject({ code: 'service_unavailable' });
+      expect(JSON.parse(result.body!)).toMatchObject({
+        code: 'service_unavailable',
+      });
     });
   });
 
@@ -76,53 +83,66 @@ describe('SimpleNoteController', () => {
       service.createNote.mockResolvedValue(mockNote);
 
       const result = await controller.createNote(
-        makeEvent({ httpMethod: 'POST', body: JSON.stringify({ text: 'Hello world' }) }),
+        makeEvent({
+          httpMethod: 'POST',
+          body: JSON.stringify({ text: 'Hello world' }),
+        }),
       );
 
       expect(result.statusCode).toEqual(201);
       expect(JSON.parse(result.body!)).toEqual(mockNote);
     });
 
-    it('returns 400 when body is missing text', async () => {
+    it('returns 400 with code 1.2.2 and zod message when body is missing text', async () => {
       const result = await controller.createNote(
         makeEvent({ httpMethod: 'POST', body: JSON.stringify({}) }),
       );
 
       expect(result.statusCode).toEqual(400);
-      expect(JSON.parse(result.body!)).toMatchObject({ code: 'bad_request' });
+      expect(JSON.parse(result.body!)).toMatchObject({
+        code: '1.2.2',
+        message: 'Invalid input: expected string, received undefined',
+      });
     });
 
-    it('returns 400 when text is empty string', async () => {
+    it('returns 400 with code 1.2.2 and zod message when text is empty string', async () => {
       const result = await controller.createNote(
         makeEvent({ httpMethod: 'POST', body: JSON.stringify({ text: '' }) }),
       );
 
       expect(result.statusCode).toEqual(400);
-      expect(JSON.parse(result.body!)).toMatchObject({ code: 'bad_request' });
+      expect(JSON.parse(result.body!)).toMatchObject({
+        code: '1.2.2',
+        message: 'Too small: expected string to have >=1 characters',
+      });
     });
 
-    it('returns 400 when body is invalid JSON', async () => {
+    it('returns 400 with code 1.2.1 when body is invalid JSON', async () => {
       const result = await controller.createNote(
         makeEvent({ httpMethod: 'POST', body: 'not-json' }),
       );
 
       expect(result.statusCode).toEqual(400);
-      expect(JSON.parse(result.body!)).toMatchObject({ code: 'bad_request' });
+      expect(JSON.parse(result.body!)).toMatchObject({ code: '1.2.1' });
     });
 
-    it('returns 400 when body is null', async () => {
+    it('returns 400 with code 1.2.2 when body is null', async () => {
       const result = await controller.createNote(
         makeEvent({ httpMethod: 'POST', body: null }),
       );
 
       expect(result.statusCode).toEqual(400);
+      expect(JSON.parse(result.body!)).toMatchObject({ code: '1.2.2' });
     });
 
     it('returns 500 when service throws', async () => {
       service.createNote.mockRejectedValue(new Error('DB error'));
 
       const result = await controller.createNote(
-        makeEvent({ httpMethod: 'POST', body: JSON.stringify({ text: 'Hello' }) }),
+        makeEvent({
+          httpMethod: 'POST',
+          body: JSON.stringify({ text: 'Hello' }),
+        }),
       );
 
       expect(result.statusCode).toEqual(500);
@@ -148,7 +168,7 @@ describe('SimpleNoteController', () => {
       expect(service.updateNote).toHaveBeenCalledWith('abc-123', 'Updated text');
     });
 
-    it('returns 400 when noteId is missing', async () => {
+    it('returns 400 with code 1.2.3 when noteId is missing', async () => {
       const result = await controller.updateNote(
         makeEvent({
           httpMethod: 'PUT',
@@ -159,10 +179,10 @@ describe('SimpleNoteController', () => {
       );
 
       expect(result.statusCode).toEqual(400);
-      expect(JSON.parse(result.body!)).toMatchObject({ code: 'bad_request' });
+      expect(JSON.parse(result.body!)).toMatchObject({ code: '1.2.3' });
     });
 
-    it('returns 400 when body validation fails', async () => {
+    it('returns 400 with code 1.2.4 and zod message when body validation fails', async () => {
       const result = await controller.updateNote(
         makeEvent({
           httpMethod: 'PUT',
@@ -173,6 +193,10 @@ describe('SimpleNoteController', () => {
       );
 
       expect(result.statusCode).toEqual(400);
+      expect(JSON.parse(result.body!)).toMatchObject({
+        code: '1.2.4',
+        message: 'Too small: expected string to have >=1 characters',
+      });
     });
 
     it('returns 500 when service throws', async () => {
@@ -209,7 +233,7 @@ describe('SimpleNoteController', () => {
       expect(service.deleteNote).toHaveBeenCalledWith('abc-123');
     });
 
-    it('returns 400 when noteId is missing', async () => {
+    it('returns 400 with code 1.2.5 when noteId is missing', async () => {
       const result = await controller.deleteNote(
         makeEvent({
           httpMethod: 'DELETE',
@@ -219,7 +243,7 @@ describe('SimpleNoteController', () => {
       );
 
       expect(result.statusCode).toEqual(400);
-      expect(JSON.parse(result.body!)).toMatchObject({ code: 'bad_request' });
+      expect(JSON.parse(result.body!)).toMatchObject({ code: '1.2.5' });
     });
 
     it('returns 500 when service throws', async () => {

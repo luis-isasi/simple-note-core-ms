@@ -1,16 +1,8 @@
-import { z } from 'zod';
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { BaseController } from './BaseController';
 import { NoteService } from '../service/NoteService';
 import { BadRequestError } from '../exceptions/BadRequestError';
-
-const createNoteSchema = z.object({
-  text: z.string().min(1, 'text cannot be empty'),
-});
-
-const updateNoteSchema = z.object({
-  text: z.string().min(1, 'text cannot be empty'),
-});
+import { createNoteSchema, updateNoteSchema } from './schemas/note.schema';
 
 export class SimpleNoteController extends BaseController {
   constructor(private service: NoteService) {
@@ -33,9 +25,8 @@ export class SimpleNoteController extends BaseController {
 
       if (!parsed.success) {
         throw new BadRequestError({
-          code: 'bad_request',
-          message: 'Validation failed',
-          detail: parsed.error.issues.map((i) => i.message).join(', '),
+          code: '1.2.2',
+          message: parsed.error.issues.map((i) => i.message).join(', '),
         });
       }
 
@@ -51,9 +42,8 @@ export class SimpleNoteController extends BaseController {
       const noteId = event.pathParameters?.noteId;
       if (!noteId) {
         throw new BadRequestError({
-          code: 'bad_request',
-          message: 'Validation failed',
-          detail: 'noteId path parameter is required',
+          code: '1.2.3',
+          message: 'noteId path parameter is required',
         });
       }
 
@@ -62,9 +52,8 @@ export class SimpleNoteController extends BaseController {
 
       if (!parsed.success) {
         throw new BadRequestError({
-          code: 'bad_request',
-          message: 'Validation failed',
-          detail: parsed.error.issues.map((i) => i.message).join(', '),
+          code: '1.2.4',
+          message: parsed.error.issues.map((i) => i.message).join(', '),
         });
       }
 
@@ -80,9 +69,8 @@ export class SimpleNoteController extends BaseController {
       const noteId = event.pathParameters?.noteId;
       if (!noteId) {
         throw new BadRequestError({
-          code: 'bad_request',
-          message: 'Validation failed',
-          detail: 'noteId path parameter is required',
+          code: '1.2.5',
+          message: 'noteId path parameter is required',
         });
       }
 
@@ -99,9 +87,8 @@ export class SimpleNoteController extends BaseController {
       return JSON.parse(raw);
     } catch {
       throw new BadRequestError({
-        code: 'bad_request',
-        message: 'Invalid JSON body',
-        detail: 'Request body must be valid JSON',
+        code: '1.2.1',
+        message: 'Request body must be valid JSON',
       });
     }
   }

@@ -65,7 +65,7 @@ describe('BaseController', () => {
     it('returns 500 for an unknown Error', () => {
       const result = controller.apiResponseError(new Error('boom'));
       expect(result.statusCode).toEqual(500);
-      expect(JSON.parse(result.body)).toMatchObject({ code: 'unknown' });
+      expect(JSON.parse(result.body)).toMatchObject({ code: '1.1.1' });
     });
 
     it('returns 500 when no error is provided', () => {
@@ -83,7 +83,7 @@ describe('BaseController', () => {
     it('returns an UnknownError when given a plain Error', () => {
       const wrapper = controller.getErrorWrapper(new Error('plain'));
       expect(wrapper).toBeInstanceOf(AbstractError);
-      expect(wrapper.getApiData().code).toEqual('unknown');
+      expect(wrapper.getApiData().code).toEqual('1.1.1');
     });
   });
 });

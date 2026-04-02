@@ -3,13 +3,6 @@ import { AbstractError } from '../exceptions/AbstractError';
 import { UnknownError } from '../exceptions/UnknownError';
 import { APIGatewayProxyResult } from 'aws-lambda';
 
-// export const CORS_HEADERS = {
-//   'Access-Control-Allow-Headers':
-//     'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent',
-//   'Access-Control-Allow-Origin': '*',
-//   'Access-Control-Allow-Methods': 'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD',
-// };
-
 export enum HttpStatusCode {
   OK = 200,
   CREATED = 201,
@@ -73,6 +66,6 @@ export class BaseController {
       return error;
     }
 
-    return new UnknownError({ message: 'Unknown error', code: 'unknown' });
+    return new UnknownError({ message: 'Unknown error', code: '1.1.1' });
   }
 }
