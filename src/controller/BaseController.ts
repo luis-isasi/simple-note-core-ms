@@ -16,6 +16,13 @@ export enum HttpStatusCode {
   SERVICE_UNAVAILABLE = 503,
 }
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers':
+    'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+};
+
 export class BaseController {
   constructor() {}
 
@@ -26,7 +33,7 @@ export class BaseController {
   public apiResponseOk(body?: any): APIGatewayProxyResult {
     return {
       statusCode: HttpStatusCode.OK,
-      // headers: CORS_HEADERS,
+      headers: CORS_HEADERS,
       isBase64Encoded: false,
       ...(body && { body: JSON.stringify(body) }),
     };
@@ -35,7 +42,7 @@ export class BaseController {
   public apiResponseCreated(body?: any): APIGatewayProxyResult {
     return {
       statusCode: HttpStatusCode.CREATED,
-      // headers: CORS_HEADERS,
+      headers: CORS_HEADERS,
       isBase64Encoded: false,
       ...(body && { body: JSON.stringify(body) }),
     };
@@ -44,7 +51,7 @@ export class BaseController {
   public apiResponseAccepted(body?: any): APIGatewayProxyResult {
     return {
       statusCode: HttpStatusCode.ACCEPTED,
-      // headers: CORS_HEADERS,
+      headers: CORS_HEADERS,
       isBase64Encoded: false,
       ...(body && { body: JSON.stringify(body) }),
     };
@@ -55,7 +62,7 @@ export class BaseController {
 
     return {
       statusCode: wrapper.getApiHttpCode(),
-      // headers: CORS_HEADERS,
+      headers: CORS_HEADERS,
       body: JSON.stringify(wrapper.getApiData()),
       isBase64Encoded: false,
     };
