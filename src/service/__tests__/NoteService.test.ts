@@ -7,6 +7,7 @@ jest.mock('uuid', () => ({ v4: () => 'mocked-uuid' }));
 
 const mockNote: Note = {
   id: 'mocked-uuid',
+  customerId: 'customer-456',
   text: 'Test note',
   status: 'ACTIVE',
   creationDate: 1000,
@@ -32,19 +33,19 @@ describe('NoteService', () => {
   // ─── getNotes ────────────────────────────────────────────────────────────────
 
   describe('getNotes', () => {
-    it('returns the notes from the repository', async () => {
+    it('returns the notes from the repository for the given customerId', async () => {
       repository.getNotes.mockResolvedValue([mockNote]);
 
-      const result = await service.getNotes();
+      const result = await service.getNotes('customer-456');
 
       expect(result).toEqual([mockNote]);
-      expect(repository.getNotes).toHaveBeenCalledTimes(1);
+      expect(repository.getNotes).toHaveBeenCalledWith('customer-456');
     });
 
     it('returns an empty array when repository returns none', async () => {
       repository.getNotes.mockResolvedValue([]);
 
-      const result = await service.getNotes();
+      const result = await service.getNotes('customer-456');
 
       expect(result).toEqual([]);
     });
@@ -52,7 +53,7 @@ describe('NoteService', () => {
     it('propagates errors thrown by the repository', async () => {
       repository.getNotes.mockRejectedValue(new Error('DB error'));
 
-      await expect(service.getNotes()).rejects.toThrow('DB error');
+      await expect(service.getNotes('customer-456')).rejects.toThrow('DB error');
     });
   });
 
@@ -70,10 +71,11 @@ describe('NoteService', () => {
     it('builds a note with the correct shape and calls repository.createNote', async () => {
       repository.createNote.mockResolvedValue();
 
-      const result = await service.createNote('Test note');
+      const result = await service.createNote('Test note', 'customer-456');
 
       expect(result).toEqual({
         id: 'mocked-uuid',
+        customerId: 'customer-456',
         text: 'Test note',
         status: 'ACTIVE',
         creationDate: 1000,
@@ -81,6 +83,7 @@ describe('NoteService', () => {
       });
       expect(repository.createNote).toHaveBeenCalledWith({
         id: 'mocked-uuid',
+        customerId: 'customer-456',
         text: 'Test note',
         status: 'ACTIVE',
         creationDate: 1000,
@@ -91,7 +94,7 @@ describe('NoteService', () => {
     it('sets status to ACTIVE', async () => {
       repository.createNote.mockResolvedValue();
 
-      const result = await service.createNote('Any text');
+      const result = await service.createNote('Any text', 'customer-456');
 
       expect(result.status).toEqual('ACTIVE');
     });
@@ -99,7 +102,7 @@ describe('NoteService', () => {
     it('propagates errors thrown by the repository', async () => {
       repository.createNote.mockRejectedValue(new Error('DB error'));
 
-      await expect(service.createNote('Test note')).rejects.toThrow('DB error');
+      await expect(service.createNote('Test note', 'customer-456')).rejects.toThrow('DB error');
     });
   });
 

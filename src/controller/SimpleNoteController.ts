@@ -9,9 +9,17 @@ export class SimpleNoteController extends BaseController {
     super();
   }
 
-  async getNotes(_event: APIGatewayProxyEvent) {
+  async getNotes(event: APIGatewayProxyEvent) {
     try {
-      const notes = await this.service.getNotes();
+      const customerId = event.queryStringParameters?.customerId;
+      if (!customerId) {
+        throw new BadRequestError({
+          code: '1.2.6',
+          message: 'customerId query parameter is required',
+        });
+      }
+
+      const notes = await this.service.getNotes(customerId);
       return this.apiResponseOk({ notes });
     } catch (error: any) {
       return this.apiResponseError(error);
@@ -20,6 +28,14 @@ export class SimpleNoteController extends BaseController {
 
   async createNote(event: APIGatewayProxyEvent) {
     try {
+      const customerId = event.queryStringParameters?.customerId;
+      if (!customerId) {
+        throw new BadRequestError({
+          code: '1.2.7',
+          message: 'customerId query parameter is required',
+        });
+      }
+
       const body = this.parseBody(event.body);
       const parsed = createNoteSchema.safeParse(body);
 
@@ -30,7 +46,7 @@ export class SimpleNoteController extends BaseController {
         });
       }
 
-      const note = await this.service.createNote(parsed.data.text);
+      const note = await this.service.createNote(parsed.data.text, customerId);
       return this.apiResponseCreated(note);
     } catch (error: any) {
       return this.apiResponseError(error);

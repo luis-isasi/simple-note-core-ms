@@ -6,14 +6,15 @@ import { NotFoundError } from '../exceptions/NotFoundError';
 export class NoteService {
   constructor(private repository: NoteRepository) {}
 
-  async getNotes(): Promise<Note[]> {
-    return this.repository.getNotes();
+  async getNotes(customerId: string): Promise<Note[]> {
+    return this.repository.getNotes(customerId);
   }
 
-  async createNote(text: string): Promise<Note> {
+  async createNote(text: string, customerId: string): Promise<Note> {
     const now = Date.now();
     const note: Note = {
       id: uuidv4(),
+      customerId,
       text,
       status: 'ACTIVE',
       creationDate: now,

@@ -17,6 +17,7 @@ const makeEvent = (
 
 const mockNote: Note = {
   id: 'abc-123',
+  customerId: 'customer-456',
   text: 'Hello world',
   status: 'ACTIVE',
   creationDate: 1000,
@@ -41,19 +42,31 @@ describe('SimpleNoteController', () => {
   // ─── getNotes ────────────────────────────────────────────────────────────────
 
   describe('getNotes', () => {
-    it('returns 200 with notes list', async () => {
+    it('returns 200 with notes list when customerId is provided', async () => {
       service.getNotes.mockResolvedValue([mockNote]);
 
-      const result = await controller.getNotes(makeEvent());
+      const result = await controller.getNotes(
+        makeEvent({ queryStringParameters: { customerId: 'customer-456' } }),
+      );
 
       expect(result.statusCode).toEqual(200);
       expect(JSON.parse(result.body!)).toEqual({ notes: [mockNote] });
+      expect(service.getNotes).toHaveBeenCalledWith('customer-456');
+    });
+
+    it('returns 400 with code 1.2.6 when customerId is missing', async () => {
+      const result = await controller.getNotes(makeEvent());
+
+      expect(result.statusCode).toEqual(400);
+      expect(JSON.parse(result.body!)).toMatchObject({ code: '1.2.6' });
     });
 
     it('returns 500 with code 1.1.1 when service throws an unknown error', async () => {
       service.getNotes.mockRejectedValue(new Error('DB error'));
 
-      const result = await controller.getNotes(makeEvent());
+      const result = await controller.getNotes(
+        makeEvent({ queryStringParameters: { customerId: 'customer-456' } }),
+      );
 
       expect(result.statusCode).toEqual(500);
       expect(JSON.parse(result.body!)).toMatchObject({ code: '1.1.1' });
@@ -67,7 +80,9 @@ describe('SimpleNoteController', () => {
         }),
       );
 
-      const result = await controller.getNotes(makeEvent());
+      const result = await controller.getNotes(
+        makeEvent({ queryStringParameters: { customerId: 'customer-456' } }),
+      );
 
       expect(result.statusCode).toEqual(503);
       expect(JSON.parse(result.body!)).toMatchObject({
@@ -79,23 +94,38 @@ describe('SimpleNoteController', () => {
   // ─── createNote ──────────────────────────────────────────────────────────────
 
   describe('createNote', () => {
-    it('returns 201 with created note', async () => {
+    it('returns 201 with created note when customerId is provided', async () => {
       service.createNote.mockResolvedValue(mockNote);
 
       const result = await controller.createNote(
         makeEvent({
           httpMethod: 'POST',
+          queryStringParameters: { customerId: 'customer-456' },
           body: JSON.stringify({ text: 'Hello world' }),
         }),
       );
 
       expect(result.statusCode).toEqual(201);
       expect(JSON.parse(result.body!)).toEqual(mockNote);
+      expect(service.createNote).toHaveBeenCalledWith('Hello world', 'customer-456');
+    });
+
+    it('returns 400 with code 1.2.7 when customerId is missing', async () => {
+      const result = await controller.createNote(
+        makeEvent({ httpMethod: 'POST', body: JSON.stringify({ text: 'Hello world' }) }),
+      );
+
+      expect(result.statusCode).toEqual(400);
+      expect(JSON.parse(result.body!)).toMatchObject({ code: '1.2.7' });
     });
 
     it('returns 400 with code 1.2.2 and zod message when body is missing text', async () => {
       const result = await controller.createNote(
-        makeEvent({ httpMethod: 'POST', body: JSON.stringify({}) }),
+        makeEvent({
+          httpMethod: 'POST',
+          queryStringParameters: { customerId: 'customer-456' },
+          body: JSON.stringify({}),
+        }),
       );
 
       expect(result.statusCode).toEqual(400);
@@ -107,7 +137,11 @@ describe('SimpleNoteController', () => {
 
     it('returns 400 with code 1.2.2 and zod message when text is empty string', async () => {
       const result = await controller.createNote(
-        makeEvent({ httpMethod: 'POST', body: JSON.stringify({ text: '' }) }),
+        makeEvent({
+          httpMethod: 'POST',
+          queryStringParameters: { customerId: 'customer-456' },
+          body: JSON.stringify({ text: '' }),
+        }),
       );
 
       expect(result.statusCode).toEqual(400);
@@ -119,7 +153,11 @@ describe('SimpleNoteController', () => {
 
     it('returns 400 with code 1.2.1 when body is invalid JSON', async () => {
       const result = await controller.createNote(
-        makeEvent({ httpMethod: 'POST', body: 'not-json' }),
+        makeEvent({
+          httpMethod: 'POST',
+          queryStringParameters: { customerId: 'customer-456' },
+          body: 'not-json',
+        }),
       );
 
       expect(result.statusCode).toEqual(400);
@@ -128,7 +166,11 @@ describe('SimpleNoteController', () => {
 
     it('returns 400 with code 1.2.2 when body is null', async () => {
       const result = await controller.createNote(
-        makeEvent({ httpMethod: 'POST', body: null }),
+        makeEvent({
+          httpMethod: 'POST',
+          queryStringParameters: { customerId: 'customer-456' },
+          body: null,
+        }),
       );
 
       expect(result.statusCode).toEqual(400);
@@ -141,6 +183,7 @@ describe('SimpleNoteController', () => {
       const result = await controller.createNote(
         makeEvent({
           httpMethod: 'POST',
+          queryStringParameters: { customerId: 'customer-456' },
           body: JSON.stringify({ text: 'Hello' }),
         }),
       );

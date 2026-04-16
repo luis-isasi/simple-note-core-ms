@@ -1,6 +1,5 @@
 import {
   DynamoDBDocumentClient,
-  ScanCommand,
   PutCommand,
   UpdateCommand,
   QueryCommand,
@@ -20,7 +19,6 @@ jest.mock('@aws-sdk/lib-dynamodb', () => {
     DynamoDBDocumentClient: {
       from: jest.fn().mockReturnValue({ send: mockSend }),
     },
-    ScanCommand: jest.fn().mockImplementation((input) => ({ input })),
     QueryCommand: jest.fn().mockImplementation((input) => ({ input })),
     PutCommand: jest.fn().mockImplementation((input) => ({ input })),
     UpdateCommand: jest.fn().mockImplementation((input) => ({ input })),
@@ -35,6 +33,7 @@ const TABLE_NAME = 'notes-table-test';
 
 const mockNote: Note = {
   id: 'abc-123',
+  customerId: 'customer-456',
   text: 'Hello world',
   status: 'ACTIVE',
   creationDate: 1000,
@@ -47,7 +46,6 @@ describe('NoteRepository', () => {
   beforeEach(() => {
     process.env.NOTES_TABLE_NAME = TABLE_NAME;
     mockSend.mockReset();
-    jest.mocked(ScanCommand).mockClear();
     jest.mocked(QueryCommand).mockClear();
     jest.mocked(PutCommand).mockClear();
     jest.mocked(UpdateCommand).mockClear();
@@ -57,19 +55,24 @@ describe('NoteRepository', () => {
   // ─── getNotes ────────────────────────────────────────────────────────────────
 
   describe('getNotes', () => {
-    it('sends a ScanCommand with the correct table name', async () => {
+    it('sends a QueryCommand against the GSI with the correct customerId', async () => {
       mockSend.mockResolvedValue({ Items: [mockNote] });
 
-      await repository.getNotes();
+      await repository.getNotes('customer-456');
 
-      expect(ScanCommand).toHaveBeenCalledWith({ TableName: TABLE_NAME });
+      expect(QueryCommand).toHaveBeenCalledWith({
+        TableName: TABLE_NAME,
+        IndexName: 'customers-notes-index',
+        KeyConditionExpression: 'customerId = :customerId',
+        ExpressionAttributeValues: { ':customerId': 'customer-456' },
+      });
       expect(mockSend).toHaveBeenCalledTimes(1);
     });
 
-    it('returns the items from the scan result', async () => {
+    it('returns the items from the query result', async () => {
       mockSend.mockResolvedValue({ Items: [mockNote] });
 
-      const result = await repository.getNotes();
+      const result = await repository.getNotes('customer-456');
 
       expect(result).toEqual([mockNote]);
     });
@@ -77,7 +80,7 @@ describe('NoteRepository', () => {
     it('returns an empty array when Items is undefined', async () => {
       mockSend.mockResolvedValue({});
 
-      const result = await repository.getNotes();
+      const result = await repository.getNotes('customer-456');
 
       expect(result).toEqual([]);
     });
@@ -85,7 +88,7 @@ describe('NoteRepository', () => {
     it('propagates errors thrown by the client', async () => {
       mockSend.mockRejectedValue(new Error('DynamoDB error'));
 
-      await expect(repository.getNotes()).rejects.toThrow('DynamoDB error');
+      await expect(repository.getNotes('customer-456')).rejects.toThrow('DynamoDB error');
     });
   });
 

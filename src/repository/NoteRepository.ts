@@ -1,7 +1,6 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
   DynamoDBDocumentClient,
-  ScanCommand,
   PutCommand,
   UpdateCommand,
   QueryCommand,
@@ -18,9 +17,14 @@ export class NoteRepository {
     this.tableName = process.env.NOTES_TABLE_NAME!;
   }
 
-  async getNotes(): Promise<Note[]> {
+  async getNotes(customerId: string): Promise<Note[]> {
     const result = await this.client.send(
-      new ScanCommand({ TableName: this.tableName }),
+      new QueryCommand({
+        TableName: this.tableName,
+        IndexName: 'customers-notes-index',
+        KeyConditionExpression: 'customerId = :customerId',
+        ExpressionAttributeValues: { ':customerId': customerId },
+      }),
     );
     return (result.Items || []) as Note[];
   }
